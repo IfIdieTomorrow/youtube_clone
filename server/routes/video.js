@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-// const { Video } = require("../models/Video");
+const { Video } = require("../models/Video");
 const { auth } = require("../middleware/auth");
 const path = require("path");
 const multer = require("multer");
 var ffmpeg = require("fluent-ffmpeg");
+const {Subscriber} = require('../models/Subscriber');
 
 // MULTER미들웨어 저장소 관리
 let storage = multer.diskStorage({
@@ -72,7 +73,6 @@ router.post("/thumbnail", (request, response)=>{
         return response.json({
             success : true,
             url : filePath,
-            fileName : filenames,
             fileDuration : fileDuration
         })
     })
@@ -89,7 +89,67 @@ router.post("/thumbnail", (request, response)=>{
         size: '320x240',
         filename: 'thumbnail-%b.png'
     })
+});
 
+router.post("/uploadVideo", (request, response)=>{
+    // 비디오 정보들을 저장
+    const video = new Video(request.body)
+    video.save((err, doc)=>{
+        if(err) return response.json({
+            success : false
+        })
+        response.status(200).json({
+            success : true
+        })
+    })
+});
+
+router.get("/getVideos", (request, response)=>{
+    //비디오를 DB에서 가져와서 클라이언트에 보낸다.
+    Video.find()
+    .populate('writer')
+    .exec((err, videos)=>{
+        if(err) return response.status(400).send(err);
+        response.status(200).json({
+            success : true,
+            videos : videos
+        })
+    })
+});
+
+router.post("/getVideoDetail", (request, response)=>{
+    Video.findOne({"_id" : request.body.videoId})
+    .populate("writer")
+    .exec((err, videoDetail)=>{
+        if(err) return response.status(400).send(err)
+        return response.status(200).json({
+            success : true,
+            videoDetail : videoDetail
+        })
+    });
+});
+
+router.post("/getSubscriptionVideo", (request, response)=>{
+    // 자신의 아이디를 가지고 구독하는 사람들을 찾는다.
+    Subscriber.find({userFrom: request.body.userFrom})
+    .exec((err, subscriberInfo)=>{
+        if(err) return response.status(400).send(err);
+        let subscribedUser = [];
+        subscriberInfo.map((subscriber, i)=>{
+            subscribedUser.push(subscriber.userTo);
+        })
+        // 찾은 사람들의 비디오를 가지고 온다
+        Video.find({writer : {$in : subscribedUser}})
+        .populate('writer')
+        .exec((err, videos)=>{
+            if(err) return response.status(400).send(err);
+            response.status(200).json({
+                success : true,
+                videos : videos
+            })
+        })
+    });
 
 });
+
 module.exports = router;
