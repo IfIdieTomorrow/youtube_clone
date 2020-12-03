@@ -21,7 +21,6 @@ router.post("/subscribed", (request, response)=>{
         if(subscribe.length !== 0){
             result = true;
         }
-        console.log(result, subscribe, request.body);
         response.status(200).json({
             success : true,
             subscribed : result
