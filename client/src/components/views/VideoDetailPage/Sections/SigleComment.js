@@ -3,6 +3,7 @@ import {Comment, Avatar, Button, Input} from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 import {useSelector} from 'react-redux';
 import Axios from 'axios';
+import LIkeDisLikes from "./LIkeDisLikes";
 
 function SigleComment(props) {
 
@@ -44,7 +45,8 @@ function SigleComment(props) {
     }
 
     const actions = [
-        <span onClick={onClickOpenReply} key="comment-basic-reply-to"> Reply to </span>
+      <LIkeDisLikes userId={localStorage.getItem("userId")} commentId={props.comment._id} />, 
+      <span onClick={onClickOpenReply} key="comment-basic-reply-to"> Reply to </span>
     ]
     return (
         <div>
